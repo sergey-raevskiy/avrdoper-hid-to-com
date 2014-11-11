@@ -66,8 +66,8 @@ that instead.
 #ifndef _HIDSDI_H
 #define _HIDSDI_H
 #include <pshpack4.h>
-#include <ddk/hidusage.h>
-#include <ddk/hidpi.h>
+#include <hidusage.h>
+#include <hidpi.h>
 typedef struct{
     ULONG   Size;
     USHORT  VendorID;
@@ -86,7 +86,7 @@ BOOLEAN __stdcall   HidD_SetNumInputBuffers(IN HANDLE device, OUT ULONG numBuffe
 #include <poppack.h>
 #endif
 
-#include <ddk/hidpi.h>
+#include <hidpi.h>
 
 #ifdef USB_DEBUG
 #define DEBUG_PRINT(arg)    printf arg
@@ -430,7 +430,6 @@ int bytesReceived, maxLen = *len;
 /* ------------------------------------------------------------------------ */
 
 #include "ser_avrdoper.h"
-#include "serial.h"
 
 #define USB_VENDOR_ID   0x16c0
 #define USB_PRODUCT_ID  0x05df
@@ -656,14 +655,14 @@ static int avrdoper_drain(int fd, int display)
 
 /* ------------------------------------------------------------------------- */
 
-struct serial_device avrdoper_serdev =
-{
-  .open = avrdoper_open,
-  .setspeed = avrdoper_setspeed,
-  .close = avrdoper_close,
-  .send = avrdoper_send,
-  .recv = avrdoper_recv,
-  .drain = avrdoper_drain,
-};
+//struct serial_device avrdoper_serdev =
+//{
+//  .open = avrdoper_open,
+//  .setspeed = avrdoper_setspeed,
+//  .close = avrdoper_close,
+//  .send = avrdoper_send,
+//  .recv = avrdoper_recv,
+//  .drain = avrdoper_drain,
+//};
 
 #endif /* defined(HAVE_LIBUSB) || defined(WIN32NATIVE) */
