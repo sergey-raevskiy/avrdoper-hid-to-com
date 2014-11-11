@@ -506,7 +506,7 @@ static char buffer[32];
 
 /* ------------------------------------------------------------------------- */
 
-static int avrdoper_open(char *port, long baud)
+int avrdoper_open(char *port, long baud)
 {
 int rval;
 char *vname = "obdev.at";
@@ -534,7 +534,7 @@ static int avrdoper_setspeed(int fd, long baud)
 
 /* ------------------------------------------------------------------------- */
 
-static void avrdoper_close(int fd)
+void avrdoper_close(int fd)
 {
     if(device == NULL){
         fprintf(stderr, "%s: avrdoper_close(): Device never opened (fd=%d)\n", progname, fd);
@@ -559,7 +559,7 @@ int i;
     return i - 1;
 }
 
-static int avrdoper_send(int fd, unsigned char *buf, size_t buflen)
+int avrdoper_send(int fd, unsigned char *buf, size_t buflen)
 {
     if(verbose > 3)
         dumpBlock("Send", buf, buflen);
@@ -621,7 +621,7 @@ int bytesPending = reportDataSizes[1];  /* guess how much data is buffered in de
     }
 }
 
-static int avrdoper_recv(int fd, unsigned char *buf, size_t buflen)
+int avrdoper_recv(int fd, unsigned char *buf, size_t buflen)
 {
 unsigned char   *p = buf;
 int             remaining = buflen;
@@ -645,24 +645,12 @@ int             remaining = buflen;
 
 /* ------------------------------------------------------------------------- */
 
-static int avrdoper_drain(int fd, int display)
+int avrdoper_drain(int fd, int display)
 {
     do{
         avrdoperFillBuffer();
     }while(avrdoperRxLength > 0);
     return 0;
 }
-
-/* ------------------------------------------------------------------------- */
-
-//struct serial_device avrdoper_serdev =
-//{
-//  .open = avrdoper_open,
-//  .setspeed = avrdoper_setspeed,
-//  .close = avrdoper_close,
-//  .send = avrdoper_send,
-//  .recv = avrdoper_recv,
-//  .drain = avrdoper_drain,
-//};
 
 #endif /* defined(HAVE_LIBUSB) || defined(WIN32NATIVE) */

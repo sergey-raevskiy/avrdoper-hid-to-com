@@ -11,6 +11,10 @@
 #ifndef __ser_avrdoper_h_included__
 #define __ser_avrdoper_h_included__
 
-extern struct serial_device avrdoper_serdev;
+int avrdoper_open(char *port, long baud);
+void avrdoper_close(int fd);
+int avrdoper_send(int fd, unsigned char *buf, size_t buflen);
+int avrdoper_recv(int fd, unsigned char *buf, size_t buflen);
+int avrdoper_drain(int fd, int display);
 
 #endif /* __ser_avrdoper_h_included__ */
