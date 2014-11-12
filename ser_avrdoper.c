@@ -625,22 +625,23 @@ int avrdoper_recv(int fd, unsigned char *buf, size_t buflen)
 {
 unsigned char   *p = buf;
 int             remaining = buflen;
+int len = 0;
 
-    while(remaining > 0){
-        int len, available = avrdoperRxLength - avrdoperRxPosition;
+    if(remaining > 0){
+        int available = avrdoperRxLength - avrdoperRxPosition;
         if(available <= 0){ /* buffer is empty */
             avrdoperFillBuffer();
-            continue;
         }
         len = remaining < available ? remaining : available;
         memcpy(p, avrdoperRxBuffer + avrdoperRxPosition, len);
         p += len;
         remaining -= len;
         avrdoperRxPosition += len;
+
     }
     if(verbose > 3)
-        dumpBlock("Receive", buf, buflen);
-    return 0;
+        dumpBlock("Receive", buf, len);
+    return len;
 }
 
 /* ------------------------------------------------------------------------- */
