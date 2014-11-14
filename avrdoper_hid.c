@@ -39,6 +39,11 @@ static void destroy_dev_list(void *data)
     SetupDiDestroyDeviceInfoList((HDEVINFO) data);
 }
 
+static void close_handle(void *data)
+{
+    CloseHandle((HANDLE) data);
+}
+
 err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
                                   pool_t *pool)
 {
@@ -87,7 +92,9 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
                             0 /*dwFlagsAndAttributes*/,
                             NULL /*hTemplateFile*/);
 
-        if (handle == INVALID_HANDLE_VALUE) {
+        if (handle != INVALID_HANDLE_VALUE) {
+            pool_add_cleanup(pool, close_handle, handle);
+        } else {
             continue;
         }
 
