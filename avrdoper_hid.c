@@ -81,7 +81,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
         }
 
         if (!HidD_GetAttributes(handle, &attributes)) {
-            return err_create(GetLastError(), "Can't query device attributes");
+            return err_create(GetLastError(), L"Can't query device attributes");
         }
 
         if (attributes.VendorID != AVRDOPER_VID
