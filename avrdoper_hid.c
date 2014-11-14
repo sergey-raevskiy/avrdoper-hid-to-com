@@ -50,6 +50,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
     GUID hid_guid;
     HDEVINFO dev_list;
     DWORD  member;
+    pool_t *iterpool;
 
     HidD_GetHidGuid(&hid_guid);
 
@@ -62,6 +63,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
 
     pool_add_cleanup(pool, destroy_dev_list, dev_list);
 
+    iterpool = pool_create(pool);
     for (member = 0; ; member++) {
         SP_DEVICE_INTERFACE_DATA info;
         SP_DEVICE_INTERFACE_DETAIL_DATA *details;
@@ -69,6 +71,8 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
         HANDLE handle;
         DWORD size;
         BOOL rc;
+
+        pool_clear(iterpool);
 
         ZeroMemory(&info, sizeof(info));
         info.cbSize = sizeof(info);
@@ -109,6 +113,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
 
         callback(details->DevicePath);
     }
+    pool_destroy(iterpool);
 
     return NULL;
 }

@@ -65,7 +65,7 @@ void * pool_memdup(pool_t *pool, void * mem, size_t size)
     return alloc;
 }
 
-void pool_destroy(pool_t *pool)
+void pool_clear(pool_t *pool)
 {
     while (pool->child)
     {
@@ -83,7 +83,11 @@ void pool_destroy(pool_t *pool)
         cleanup->cleanup(cleanup->data);
         free(cleanup);
     }
+}
 
+void pool_destroy(pool_t *pool)
+{
+    pool_clear(pool);
     free(pool);
 }
 

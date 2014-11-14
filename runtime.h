@@ -10,6 +10,7 @@ typedef void (* pool_cleanup_t)(void *data);
 pool_t * pool_create(pool_t *parent);
 void pool_add_cleanup(pool_t *pool, pool_cleanup_t cleanup, void *data);
 void * pool_calloc(pool_t *pool, size_t size);
+void pool_clear(pool_t *pool);
 void pool_destroy(pool_t *pool);
 
 // Errors
