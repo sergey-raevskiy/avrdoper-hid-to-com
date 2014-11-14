@@ -4,6 +4,9 @@
 
 #include "runtime.h"
 
+#define AVRDOPER_VID 0x16c0
+#define AVRDOPER_PID 0x05df
+
 static void destroy_dev_list(void *data)
 {
     SetupDiDestroyDeviceInfoList((HDEVINFO) data);
@@ -30,6 +33,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
     for (member = 0; ; member++) {
         SP_DEVICE_INTERFACE_DATA info;
         SP_DEVICE_INTERFACE_DETAIL_DATA *details;
+        HIDD_ATTRIBUTES attributes;
         HANDLE handle;
         DWORD size;
         BOOL rc;
@@ -62,6 +66,27 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
 
         if (!rc) {
             return err_create(GetLastError(), L"Can't query interface details");
+        }
+
+        handle = CreateFile(details->DevicePath,
+                            GENERIC_READ | GENERIC_WRITE,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            NULL /*lpSecurityAttributes*/,
+                            OPEN_EXISTING,
+                            0 /*dwFlagsAndAttributes*/,
+                            NULL /*hTemplateFile*/);
+
+        if (handle == INVALID_HANDLE_VALUE) {
+            continue;
+        }
+
+        if (!HidD_GetAttributes(handle, &attributes)) {
+            return err_create(GetLastError(), "Can't query device attributes");
+        }
+
+        if (attributes.VendorID != AVRDOPER_VID
+            || attributes.ProductID != AVRDOPER_PID) {
+                continue;
         }
 
         callback(details->DevicePath);
