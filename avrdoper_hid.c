@@ -7,6 +7,33 @@
 #define AVRDOPER_VID 0x16c0
 #define AVRDOPER_PID 0x05df
 
+static err_t * get_interface_details(SP_DEVICE_INTERFACE_DETAIL_DATA **details,
+                                     HDEVINFO devs,
+                                     SP_DEVICE_INTERFACE_DATA *info,
+                                     pool_t *pool)
+{
+    BOOL rc;
+    DWORD size;
+
+    rc = SetupDiGetDeviceInterfaceDetail(devs, info, NULL, 0, &size, NULL);
+
+    if (!rc && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+        return err_create(GetLastError(), L"Can't query interface details");
+    }
+
+    (*details) = pool_calloc(pool, size);
+    (*details)->cbSize = sizeof(**details);
+
+    rc = SetupDiGetDeviceInterfaceDetail(devs, info, *details, size, &size,
+                                         NULL);
+
+    if (!rc) {
+        return err_create(GetLastError(), L"Can't query interface details");
+    }
+
+    return NULL;
+}
+
 static void destroy_dev_list(void *data)
 {
     SetupDiDestroyDeviceInfoList((HDEVINFO) data);
@@ -50,23 +77,7 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
             return err_create(GetLastError(), L"Can't enumerate HID devices");
         }
 
-        rc = SetupDiGetDeviceInterfaceDetail(dev_list, &info, NULL, 0, &size,
-                                             NULL);
-
-        if (!rc && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            return err_create(GetLastError(), L"Can't query interface details");
-        }
-
-        details = pool_calloc(pool, size);
-        ZeroMemory(details, sizeof(*details));
-        details->cbSize = sizeof(*details);
-
-        rc = SetupDiGetDeviceInterfaceDetail(dev_list, &info, details, size,
-                                             &size, NULL);
-
-        if (!rc) {
-            return err_create(GetLastError(), L"Can't query interface details");
-        }
+        ERR(get_interface_details(&details, dev_list, &info, pool));
 
         handle = CreateFile(details->DevicePath,
                             GENERIC_READ | GENERIC_WRITE,

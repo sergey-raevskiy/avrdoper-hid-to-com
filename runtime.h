@@ -22,3 +22,8 @@ typedef struct err_t {
 
 err_t * err_create(DWORD code, const wchar_t *msg);
 void err_clear(err_t *err);
+
+#define ERR(expr) do {         \
+    err_t *__err = (expr);     \
+    if (__err) return __err;   \
+} while (0)
