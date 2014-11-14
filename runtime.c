@@ -17,6 +17,7 @@ typedef struct cleanup_t
 struct pool_t
 {
     pool_t *prev_sibling;
+    pool_t *parent;
     pool_t *child;
     cleanup_t *cleanup;
 };
@@ -27,10 +28,12 @@ pool_t * pool_create(pool_t *parent)
 
     pool->child = NULL;
     pool->cleanup = NULL;
+    pool->prev_sibling = NULL;
+    pool->parent = parent;
 
     if (parent) {
         pool->prev_sibling = parent->child;
-        parent->child = pool->prev_sibling;
+        parent->child = pool;
     }
 
     return pool;
@@ -87,6 +90,19 @@ void pool_clear(pool_t *pool)
 
 void pool_destroy(pool_t *pool)
 {
+    if (pool->parent) {
+        pool_t *p = pool->parent->child;
+
+        if (p == pool) {
+            pool->parent->child = pool->prev_sibling;
+        } else {
+            while (p->prev_sibling != pool)
+                p = p->prev_sibling;
+
+            p->prev_sibling = pool->prev_sibling;
+        }
+    }
+
     pool_clear(pool);
     free(pool);
 }
