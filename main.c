@@ -53,8 +53,9 @@ VOID CALLBACK write_completion(
     SetEvent(io->ov.hEvent);
 }
 
-int print_dev(const wchar_t *path) {
-    wprintf(L"%s\n", path);
+int print_dev(void *data, const wchar_t *id, pool_t *pool) {
+    wprintf(L"%s\n", id);
+    return 1;
 }
 
 int wmain()
@@ -65,7 +66,7 @@ int wmain()
     pool_t *pool = pool_create(NULL);
     err_t *err;
 
-    err = avrdoper_hid_enum_devices(print_dev, pool);
+    err = avrdoper_hid_enum_devices(print_dev, NULL, pool);
     if (err) {
         wprintf(L"Error: %s\n", err->msg);
         err_clear(err);

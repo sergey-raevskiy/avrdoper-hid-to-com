@@ -2,7 +2,7 @@
 #include <hidsdi.h>
 #include <SetupAPI.h>
 
-#include "runtime.h"
+#include "avrdoper_hid.h"
 
 #define AVRDOPER_VID 0x16c0
 #define AVRDOPER_PID 0x05df
@@ -44,7 +44,8 @@ static void close_handle(void *data)
     CloseHandle((HANDLE) data);
 }
 
-err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
+err_t * avrdoper_hid_enum_devices(avrdoper_enum_callback_t callback,
+                                  void *data,
                                   pool_t *pool)
 {
     GUID hid_guid;
@@ -111,7 +112,8 @@ err_t * avrdoper_hid_enum_devices(int (* callback)(const wchar_t *path),
                 continue;
         }
 
-        callback(details->DevicePath);
+        if (!callback(data, details->DevicePath, iterpool))
+            break;
     }
     pool_destroy(iterpool);
 
