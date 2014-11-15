@@ -53,8 +53,47 @@ VOID CALLBACK write_completion(
     SetEvent(io->ov.hEvent);
 }
 
-int print_dev(void *data, const wchar_t *id, pool_t *pool) {
-    wprintf(L"%s\n", id);
+int print_dev(void *data, const wchar_t *id, pool_t *pool)
+{
+    err_t *err;
+    avrdoper_dev_t *dev;
+    int i;
+    char msg[] = { 
+        0x1b,       // start
+        0x01,       // seq
+        0x00, 0x01, // size
+        0x0e,       // token
+        0x01,       // command
+        0x00
+    };
+    char buf[17];
+    size_t len = sizeof(buf);
+
+    for (i = 0; i < _countof(msg) - 1; i++) {
+        msg[_countof(msg) - 1] ^= msg[i];
+    }
+
+    err = avrdoper_hid_open(&dev, id, pool);
+    if (err) {
+        *(err_t **)data = err;
+        return 0;
+    }
+
+    err = avrdoper_hid_write(dev, msg, sizeof(msg), pool);
+    if (err) {
+        *(err_t **)data = err;
+        return 0;
+    }
+
+    err = avrdoper_hid_read(dev, buf, &len, pool);
+    if (err) {
+        *(err_t **)data = err;
+        return 0;
+    }
+
+    buf[16] = 0;
+    printf("%s\n", buf + 7);
+
     return 1;
 }
 
@@ -66,7 +105,7 @@ int wmain()
     pool_t *pool = pool_create(NULL);
     err_t *err;
 
-    err = avrdoper_hid_enum_devices(print_dev, NULL, pool);
+    err = avrdoper_hid_enum_devices(print_dev, &err, pool);
     if (err) {
         wprintf(L"Error: %s\n", err->msg);
         err_clear(err);
