@@ -97,21 +97,32 @@ int print_dev(void *data, const wchar_t *id, pool_t *pool)
     return 1;
 }
 
+static err_t * start(pool_t *pool)
+{
+    err_t *err = NULL;
+    ERR(avrdoper_hid_enum_devices(print_dev, &err, pool));
+
+    return err;
+}
+
 int wmain()
 {
-    HANDLE hPort, read_completed, write_completed;
-    io_t read_io, write_io;
-    int fd;
     pool_t *pool = pool_create(NULL);
     err_t *err;
+    int exit_code;
 
-    err = avrdoper_hid_enum_devices(print_dev, &err, pool);
-    if (err) {
+    err = start(pool);
+
+    if (!err) {
+        exit_code = EXIT_SUCCESS;
+    } else {
         wprintf(L"Error: %s\n", err->msg);
         err_clear(err);
+        exit_code = EXIT_FAILURE;
     }
 
     pool_destroy(pool);
+    return exit_code;
 
     //hPort = CreateFileA("COM3", FILE_GENERIC_READ | FILE_GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     //if (hPort == INVALID_HANDLE_VALUE)
@@ -161,8 +172,4 @@ int wmain()
     //        continue;
     //    }
     //}
-
-    system("pause");
-
-    return 0;
 }
