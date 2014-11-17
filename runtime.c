@@ -89,6 +89,25 @@ wchar_t * pool_wstrcat(pool_t *pool, ...)
     return result;
 }
 
+wchar_t *pool_wsprintf(pool_t *pool, const wchar_t *fmt, ...)
+{
+    va_list va;
+    const wchar_t *str;
+    wchar_t *result;
+    size_t total_len;
+
+    va_start(va, fmt);
+    total_len = _vscwprintf(fmt, va) + 1;
+    va_end(va);
+
+    result = pool_calloc(pool, total_len * sizeof(wchar_t));
+    va_start(va, fmt);
+    vswprintf_s(result, total_len, fmt, va);
+    va_end(va);
+
+    return result;
+}
+
 void pool_clear(pool_t *pool)
 {
     while (pool->child)
@@ -161,12 +180,13 @@ const wchar_t * err_str(err_t *err, pool_t *pool)
 
     if (rc > 0)
     {
-        str_msg = pool_wstrcat(pool, err->msg, ": ", sys_msg, NULL);
+        str_msg = pool_wsprintf(pool, L"%s: %s (error %lu)", err->msg, sys_msg,
+                                err->code);
         LocalFree(sys_msg);
     }
     else
     {
-        str_msg = pool_wstrcat(pool, err->msg, NULL);
+        str_msg = pool_wsprintf(pool, L"%s: error %lu", err->msg, err->code);
     }
 
     return str_msg;
