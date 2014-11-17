@@ -23,6 +23,7 @@ typedef struct err_t {
 
 err_t * err_create(DWORD code, const wchar_t *msg);
 void err_clear(err_t *err);
+const wchar_t * err_str(err_t *err, pool_t *pool);
 
 #define ERR(expr) do {         \
     err_t *__err = (expr);     \

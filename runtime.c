@@ -68,6 +68,27 @@ void * pool_memdup(pool_t *pool, void * mem, size_t size)
     return alloc;
 }
 
+wchar_t * pool_wstrcat(pool_t *pool, ...)
+{
+    va_list va;
+    const wchar_t *str;
+    wchar_t *result;
+    size_t total_len = 1;
+
+    va_start(va, pool);
+    while (str = va_arg(va, const wchar_t *))
+        total_len += wcslen(str);
+    va_end(va);
+
+    result = pool_calloc(pool, total_len * sizeof(wchar_t));
+    va_start(va, pool);
+    while (str = va_arg(va, const wchar_t *))
+        wcscat_s(result, total_len, str);
+    va_end(va);
+
+    return result;
+}
+
 void pool_clear(pool_t *pool)
 {
     while (pool->child)
@@ -124,4 +145,29 @@ err_t * err_create(DWORD code, const wchar_t *msg)
 void err_clear(err_t *err)
 {
     pool_destroy(err->pool);
+}
+
+const wchar_t * err_str(err_t *err, pool_t *pool)
+{
+    const wchar_t *sys_msg;
+    const wchar_t *str_msg;
+    DWORD rc;
+
+    rc = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM
+                        | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                       NULL, err->code,
+                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                       (LPWSTR) &sys_msg, 0, NULL);
+
+    if (rc > 0)
+    {
+        str_msg = pool_wstrcat(pool, err->msg, ": ", sys_msg, NULL);
+        LocalFree(sys_msg);
+    }
+    else
+    {
+        str_msg = pool_wstrcat(pool, err->msg, NULL);
+    }
+
+    return str_msg;
 }

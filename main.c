@@ -116,13 +116,7 @@ int wmain()
     if (!err) {
         exit_code = EXIT_SUCCESS;
     } else {
-        const wchar_t *msg;
-
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                      NULL, err->code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR) &msg, 0, NULL);
-
-        fwprintf(stderr, L"%s: %s (%ul)\n", err->msg, msg, err->code);
-        LocalFree(msg);
+        fwprintf(L"Error: %s\n", err_str(err, pool));
         err_clear(err);
         exit_code = EXIT_FAILURE;
     }
