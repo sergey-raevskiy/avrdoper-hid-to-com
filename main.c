@@ -116,7 +116,7 @@ int wmain()
     if (!err) {
         exit_code = EXIT_SUCCESS;
     } else {
-        fwprintf(L"Error: %s\n", err_str(err, pool));
+        fwprintf(stderr, L"Error: %s\n", err_str(err, pool));
         err_clear(err);
         exit_code = EXIT_FAILURE;
     }
