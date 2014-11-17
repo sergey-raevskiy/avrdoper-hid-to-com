@@ -214,7 +214,7 @@ err_t * avrdoper_hid_read(avrdoper_dev_t *dev,
         if (!dev->rxavail && left) {
             if (!HidD_GetFeature(dev->handle, dev->rxbuf,
                                  report_sizes[id] + 2)) {
-                return err_create(GetLastError(), L"Can't write to device");
+                return err_create(GetLastError(), L"Can't read from device");
             }
 
             dev->rxavail = dev->rxbuf[1];
