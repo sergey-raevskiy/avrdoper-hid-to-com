@@ -64,6 +64,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="avrdoper_hid.c" />
+    <ClCompile Include="com.c" />
     <ClCompile Include="runtime.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="ser_avrdoper.c" />
