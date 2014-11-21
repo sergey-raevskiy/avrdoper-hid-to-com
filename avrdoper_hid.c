@@ -140,7 +140,7 @@ static const size_t report_sizes[] = { 13, 29, 61, 125 };
 static const int choose_data_size(size_t size)
 {
     int i = 0;
-    while (size > report_sizes[i] && i < _countof(report_sizes))
+    while (size > report_sizes[i] && i <= _countof(report_sizes))
         i++;
 
     return i;
