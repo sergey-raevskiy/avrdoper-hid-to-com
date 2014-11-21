@@ -10,8 +10,7 @@
 static err_t * get_interface_details(SP_DEVICE_INTERFACE_DETAIL_DATA **details,
                                      HDEVINFO devs,
                                      SP_DEVICE_INTERFACE_DATA *info,
-                                     pool_t *pool)
-{
+                                     pool_t *pool) {
     BOOL rc;
     DWORD size;
 
@@ -44,8 +43,7 @@ static void close_handle(void *data)
     CloseHandle((HANDLE) data);
 }
 
-static DWORD open_device(HANDLE *handle, const wchar_t *path, pool_t *pool)
-{
+static DWORD open_device(HANDLE *handle, const wchar_t *path, pool_t *pool) {
     *handle = CreateFile(path,
                          GENERIC_READ | GENERIC_WRITE,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -63,8 +61,7 @@ static DWORD open_device(HANDLE *handle, const wchar_t *path, pool_t *pool)
 }
 
 static err_t * avrdoper_hid_enum(serial_enumerate_callback_t callback,
-                                 void *data, pool_t *pool)
-{
+                                 void *data, pool_t *pool) {
     GUID hid_guid;
     HDEVINFO dev_list;
     DWORD  member;
@@ -137,8 +134,7 @@ struct serial_private {
 
 static const size_t report_sizes[] = { 13, 29, 61, 125 };
 
-static const int choose_data_size(size_t size)
-{
+static const int choose_data_size(size_t size) {
     int i = 0;
     while (size > report_sizes[i] && i <= _countof(report_sizes))
         i++;
@@ -148,8 +144,7 @@ static const int choose_data_size(size_t size)
 
 static err_t * avrdoper_hid_open(serial_private_t **dev,
                                  const wchar_t *id,
-                                 pool_t *pool)
-{
+                                 pool_t *pool) {
     DWORD err;
 
     (*dev) = pool_calloc(pool, sizeof(**dev));
@@ -166,8 +161,7 @@ static err_t * avrdoper_hid_open(serial_private_t **dev,
 static err_t * avrdoper_hid_write(serial_private_t *dev,
                                   const unsigned char *data,
                                   size_t len,
-                                  pool_t *pool)
-{
+                                  pool_t *pool) {
     while (len) {
         int id = choose_data_size(len);
         int chunk_len = len > report_sizes[id] ? report_sizes[id] : len;
