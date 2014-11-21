@@ -2,7 +2,7 @@
 #include <hidsdi.h>
 #include <SetupAPI.h>
 
-#include "avrdoper_hid.h"
+#include "runtime.h"
 
 #define AVRDOPER_VID 0x16c0
 #define AVRDOPER_PID 0x05df
@@ -62,9 +62,8 @@ static DWORD open_device(HANDLE *handle, const wchar_t *path, pool_t *pool)
     }
 }
 
-err_t * avrdoper_hid_enum_devices(avrdoper_enum_callback_t callback,
-                                  void *data,
-                                  pool_t *pool)
+static err_t * avrdoper_hid_enum(serial_enumerate_callback_t callback,
+                                 void *data, pool_t *pool)
 {
     GUID hid_guid;
     HDEVINFO dev_list;
@@ -129,9 +128,9 @@ err_t * avrdoper_hid_enum_devices(avrdoper_enum_callback_t callback,
     return NULL;
 }
 
-struct avrdoper_dev {
+struct serial_private {
     HANDLE handle;
-    char rxbuf[256];
+    char rxbuf[125];
     int rxpos;
     int rxavail;
 };
@@ -147,9 +146,9 @@ static const int choose_data_size(size_t size)
     return i;
 }
 
-err_t * avrdoper_hid_open(avrdoper_dev_t **dev,
-                          const wchar_t *id,
-                          pool_t *pool)
+static err_t * avrdoper_hid_open(serial_private_t **dev,
+                                 const wchar_t *id,
+                                 pool_t *pool)
 {
     DWORD err;
 
@@ -164,10 +163,10 @@ err_t * avrdoper_hid_open(avrdoper_dev_t **dev,
     return NULL;
 }
 
-err_t * avrdoper_hid_write(avrdoper_dev_t *dev,
-                           const char *data,
-                           size_t len,
-                           pool_t *pool)
+static err_t * avrdoper_hid_write(serial_private_t *dev,
+                                  const unsigned char *data,
+                                  size_t len,
+                                  pool_t *pool)
 {
     while (len) {
         int id = choose_data_size(len);
@@ -189,43 +188,36 @@ err_t * avrdoper_hid_write(avrdoper_dev_t *dev,
     return NULL;
 }
 
-err_t * avrdoper_hid_read(avrdoper_dev_t *dev,
-                          char *buffer,
-                          size_t *len,
-                          pool_t *pool)
-{
-    size_t left = *len;
-    size_t read = 0;
-
-    while (left) {
-        size_t recv_sz = dev->rxavail > left ? left : dev->rxavail;
-        int id;
-
-        memcpy(buffer, dev->rxbuf + dev->rxpos, recv_sz);
-        buffer += recv_sz;
-        read += recv_sz;
-        left -= recv_sz;
-        dev->rxpos += recv_sz;
-        dev->rxavail -= recv_sz;
-
-        id = choose_data_size(left);
+static err_t * avrdoper_hid_read(serial_private_t *dev,
+                                 unsigned char *buffer,
+                                 size_t *len,
+                                 pool_t *pool) {
+    if (!dev->rxavail) {
+        int id = choose_data_size(sizeof(dev->rxbuf));
         dev->rxbuf[0] = (char) (id + 1);
 
-        if (!dev->rxavail && left) {
-            if (!HidD_GetFeature(dev->handle, dev->rxbuf,
-                                 report_sizes[id] + 2)) {
+        if (!HidD_GetFeature(dev->handle, dev->rxbuf,
+                             report_sizes[id] + 2)) {
                 return err_create(GetLastError(), L"Can't read from device");
-            }
-
-            dev->rxavail = dev->rxbuf[1];
-            dev->rxpos = 2;
-
-            if (!dev->rxavail) {
-                break;
-            }
         }
+
+        dev->rxavail = dev->rxbuf[1];
+        dev->rxpos = 2;
     }
 
-    *len = read;
+    if (*len > dev->rxavail)
+        *len = dev->rxavail;
+
+    memcpy(buffer, dev->rxbuf + dev->rxpos, *len);
+    dev->rxavail -= *len;
+    dev->rxpos += *len;
+
     return NULL;
 }
+
+const serial_vtable_t avrdoper_hid = {
+    avrdoper_hid_enum,
+    avrdoper_hid_open,
+    avrdoper_hid_read,
+    avrdoper_hid_write
+};

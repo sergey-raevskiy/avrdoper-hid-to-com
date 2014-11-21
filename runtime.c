@@ -191,3 +191,60 @@ const wchar_t * err_str(err_t *err, pool_t *pool)
 
     return str_msg;
 }
+
+// Serial
+
+struct serial {
+    const serial_vtable_t *vtable;
+    void *priv;
+};
+
+err_t * serial_enum(const serial_vtable_t *vtable,
+                    serial_enumerate_callback_t callback,
+                    void *data,
+                    pool_t *pool) {
+    return vtable->enumerate(callback, data, pool);
+}
+
+err_t * serial_open(serial_t **serial,
+                    const serial_vtable_t *vtable,
+                    const wchar_t *id,
+                    pool_t *pool) {
+    *serial = pool_calloc(pool, sizeof(**serial));
+    (*serial)->vtable = vtable;
+    return vtable->open(&(*serial)->priv, id, pool);
+}
+
+err_t * serial_read(serial_t *serial, unsigned char *buffer, size_t *len,
+                    pool_t *pool) {
+    return serial->vtable->read(serial->priv, buffer, len, pool);
+}
+
+err_t * serial_write(serial_t *serial, const unsigned char *data, size_t len,
+                     pool_t *pool) {
+    return serial->vtable->write(serial->priv, data, len, pool);
+}
+
+err_t * serial_read_full(serial_t *serial, unsigned char *buffer, size_t len,
+                         int timeout, pool_t *pool) {
+    size_t read = 0;
+    size_t left = len;
+    DWORD start = GetTickCount();
+
+    while (left) {
+        size_t chunk = left;
+        ERR(serial_read(serial, buffer, &chunk, pool));
+
+        if (chunk) {
+            buffer += chunk;
+            read += chunk;
+            left -= chunk;
+            start = GetTickCount();
+        } else if (timeout != INFINITE && GetTickCount() - start > timeout) {
+            return err_create(ERROR_TIMEOUT,
+                              L"Timeout when reading serial device");
+        }
+    }
+
+    return NULL;
+}

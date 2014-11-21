@@ -3,62 +3,17 @@
 
 #include "ser_avrdoper.h"
 #include "runtime.h"
-#include "avrdoper_hid.h"
+#include "stk.h"
 
 char *progname = "avrdoper-hid-to-com";
 int verbose = 0;
 
-static void die_win32()
-{
-    char *msg;
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                   NULL, GetLastError(), LANG_USER_DEFAULT, (LPSTR) &msg, 0, NULL);
-    fprintf(stderr, "Error: %s\n", msg);
-    exit(1);
-}
-
-typedef struct {
-    OVERLAPPED ov;
-    char buf[1024];
-} io_t;
-
-static void hexdump(const char  *b, int len) {
-    while (len--) {
-        printf("%02x ", (unsigned int)*b++);
-    }
-}
-
-VOID CALLBACK read_completion(
-    _In_     DWORD dwErrorCode,
-    _In_     DWORD dwNumberOfBytesTransfered,
-    _Inout_  LPOVERLAPPED lpOverlapped
-    )
-{
-    io_t *io = CONTAINING_RECORD(lpOverlapped, io_t, ov);
-    printf("comp to prog: ");
-    hexdump(io->buf, dwNumberOfBytesTransfered);
-    printf("\n");
-
-    avrdoper_send(0, (unsigned char *)io->buf, dwNumberOfBytesTransfered);
-    SetEvent(io->ov.hEvent);
-}
-
-VOID CALLBACK write_completion(
-    _In_     DWORD dwErrorCode,
-    _In_     DWORD dwNumberOfBytesTransfered,
-    _Inout_  LPOVERLAPPED lpOverlapped
-    )
-{
-    io_t *io = CONTAINING_RECORD(lpOverlapped, io_t, ov);
-    SetEvent(io->ov.hEvent);
-}
-
 int print_dev(void *data, const wchar_t *id, pool_t *pool)
 {
     err_t *err;
-    avrdoper_dev_t *dev;
+    serial_t *dev;
     int i;
-    char msg[] = { 
+    unsigned char msg[] = { 
         0x1b,       // start
         0x01,       // seq
         0x00, 0x01, // size
@@ -66,33 +21,32 @@ int print_dev(void *data, const wchar_t *id, pool_t *pool)
         0x01,       // command
         0x00
     };
-    char buf[17];
-    size_t len = sizeof(buf);
+    unsigned char *response;
 
     for (i = 0; i < _countof(msg) - 1; i++) {
         msg[_countof(msg) - 1] ^= msg[i];
     }
 
-    err = avrdoper_hid_open(&dev, id, pool);
+    err = serial_open(&dev, &avrdoper_hid, id, pool);
     if (err) {
         *(err_t **)data = err;
         return 0;
     }
 
-    err = avrdoper_hid_write(dev, msg, sizeof(msg), pool);
+    err = stk_write_message(dev, msg, pool);
     if (err) {
         *(err_t **)data = err;
         return 0;
     }
 
-    err = avrdoper_hid_read(dev, buf, &len, pool);
+    err = stk_read_message(&response, dev, INFINITE, pool);
     if (err) {
         *(err_t **)data = err;
         return 0;
     }
 
-    buf[16] = 0;
-    printf("%s\n", buf + 7);
+    response[16] = 0;
+    printf("%s\n", response + 7);
 
     return 1;
 }
@@ -100,7 +54,7 @@ int print_dev(void *data, const wchar_t *id, pool_t *pool)
 static err_t * start(pool_t *pool)
 {
     err_t *err = NULL;
-    ERR(avrdoper_hid_enum_devices(print_dev, &err, pool));
+    ERR(serial_enum(&avrdoper_hid, print_dev, &err, pool));
 
     return err;
 }
