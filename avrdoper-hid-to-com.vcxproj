@@ -67,13 +67,10 @@
     <ClCompile Include="com.c" />
     <ClCompile Include="runtime.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="ser_avrdoper.c" />
     <ClCompile Include="stk.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ac_cfg.h" />
     <ClInclude Include="runtime.h" />
-    <ClInclude Include="ser_avrdoper.h" />
     <ClInclude Include="stk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

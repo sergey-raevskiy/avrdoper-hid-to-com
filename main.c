@@ -1,12 +1,8 @@
 #include <windows.h>
 #include <stdio.h>
 
-#include "ser_avrdoper.h"
 #include "runtime.h"
 #include "stk.h"
-
-char *progname = "avrdoper-hid-to-com";
-int verbose = 0;
 
 err_t * run_exchange(const wchar_t *avrdoper_id, pool_t *pool) {
     serial_t *avrdoper;
