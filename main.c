@@ -11,21 +11,26 @@ int verbose = 0;
 err_t * run_exchange(const wchar_t *avrdoper_id, pool_t *pool) {
     serial_t *avrdoper;
     serial_t *comport;
+    pool_t *iterpool;
 
     ERR(serial_open(&avrdoper, &avrdoper_hid, avrdoper_id, pool));
     ERR(serial_open(&comport, &com, L"COM3", pool));
 
+    iterpool = pool_create(pool);
     while (1) {
         unsigned char *req, *resp;
 
-        ERR(stk_read_message(&req, comport, INFINITE, pool));
-        stk_dump_message(stdout, req);
-        ERR(stk_write_message(avrdoper, req, pool));
+        pool_clear(iterpool);
 
-        ERR(stk_read_message(&resp, avrdoper, INFINITE, pool));
+        ERR(stk_read_message(&req, comport, INFINITE, iterpool));
+        stk_dump_message(stdout, req);
+        ERR(stk_write_message(avrdoper, req, iterpool));
+
+        ERR(stk_read_message(&resp, avrdoper, INFINITE, iterpool));
         stk_dump_message(stdout, resp);
-        ERR(stk_write_message(comport, resp, pool));
+        ERR(stk_write_message(comport, resp, iterpool));
     }
+    pool_destroy(iterpool);
 }
 
 int print_dev(void *data, const wchar_t *id, pool_t *pool)
