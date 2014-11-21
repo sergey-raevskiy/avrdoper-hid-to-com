@@ -198,7 +198,7 @@ static err_t * avrdoper_hid_read(serial_private_t *dev,
 
         if (!HidD_GetFeature(dev->handle, dev->rxbuf,
                              report_sizes[id] + 2)) {
-                return err_create(GetLastError(), L"Can't read from device");
+            return err_create(GetLastError(), L"Can't read from device");
         }
 
         dev->rxavail = dev->rxbuf[1];
