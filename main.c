@@ -19,9 +19,11 @@ err_t * run_exchange(const wchar_t *avrdoper_id, pool_t *pool) {
         unsigned char *req, *resp;
 
         ERR(stk_read_message(&req, comport, INFINITE, pool));
+        stk_dump_message(stdout, req);
         ERR(stk_write_message(avrdoper, req, pool));
 
         ERR(stk_read_message(&resp, avrdoper, INFINITE, pool));
+        stk_dump_message(stdout, resp);
         ERR(stk_write_message(comport, resp, pool));
     }
 }
