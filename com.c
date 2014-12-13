@@ -7,6 +7,8 @@ struct serial_private {
 static err_t * com_open(serial_private_t **dev,
                         const wchar_t *id,
                         pool_t *pool) {
+    DCB dcb;
+
     *dev = pool_calloc(pool, sizeof(**dev));
     (*dev)->port = CreateFile(id,
                              GENERIC_READ | GENERIC_WRITE,
@@ -18,6 +20,16 @@ static err_t * com_open(serial_private_t **dev,
 
     if ((*dev)->port == INVALID_HANDLE_VALUE) {
         return err_create(GetLastError(), L"Can't open COM port");
+    }
+
+    // NOTE: This might be not the best place for doing this.
+    memset(&dcb, 0, sizeof(dcb));
+    if (!BuildCommDCB(L"9600,N,8,1", &dcb)) {
+        return err_create(GetLastError(), L"Can't set COM port state");
+    }
+
+    if (!SetCommState((*dev)->port, &dcb)) {
+        return err_create(GetLastError(), L"Can't set COM port state");
     }
 
     return NULL;
