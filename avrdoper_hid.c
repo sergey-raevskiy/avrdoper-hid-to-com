@@ -186,17 +186,19 @@ static err_t * avrdoper_hid_read(serial_private_t *dev,
                                  unsigned char *buffer,
                                  size_t *len,
                                  pool_t *pool) {
+    // FIXME: This written in hackish way.
     if (!dev->rxavail) {
-        int id = choose_data_size(sizeof(dev->rxbuf));
-        dev->rxbuf[0] = (char) (id + 1);
+        dev->rxbuf[0] = 4;
 
         if (!HidD_GetFeature(dev->handle, dev->rxbuf,
-                             report_sizes[id] + 2)) {
+                             report_sizes[3] + 2)) {
             return err_create(GetLastError(), L"Can't read from device");
         }
 
         dev->rxavail = dev->rxbuf[1];
         dev->rxpos = 2;
+        if (dev->rxavail > 125)
+            dev->rxavail = 125;
     }
 
     if (*len > dev->rxavail)
