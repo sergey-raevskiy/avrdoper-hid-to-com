@@ -127,7 +127,7 @@ static err_t * avrdoper_hid_enum(serial_enumerate_callback_t callback,
 
 struct serial_private {
     HANDLE handle;
-    char rxbuf[125];
+    unsigned char rxbuf[128];
     int rxpos;
     int rxavail;
 };
@@ -136,7 +136,7 @@ static const size_t report_sizes[] = { 13, 29, 61, 125 };
 
 static const int choose_data_size(size_t size) {
     int i = 0;
-    while (size > report_sizes[i] && i <= _countof(report_sizes))
+    while (size > report_sizes[i] && i < _countof(report_sizes) - 1)
         i++;
 
     return i;
