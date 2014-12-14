@@ -19,12 +19,20 @@ err_t * run_exchange(const wchar_t *avrdoper_id, pool_t *pool) {
         pool_clear(iterpool);
 
         ERR(stk_read_message(&req, comport, INFINITE, iterpool));
+
+        printf("Request:\n");
         stk_dump_message(stdout, req);
+
         ERR(stk_write_message(avrdoper, req, iterpool));
 
         ERR(stk_read_message(&resp, avrdoper, INFINITE, iterpool));
+
+        printf("Response:\n");
         stk_dump_message(stdout, resp);
+
         ERR(stk_write_message(comport, resp, iterpool));
+
+        printf("\n");
     }
     pool_destroy(iterpool);
 }
@@ -55,6 +63,7 @@ int wmain()
         exit_code = EXIT_SUCCESS;
     } else {
         fwprintf(stderr, L"Error: %s\n", err_str(err, pool));
+        system("pause");
         err_clear(err);
         exit_code = EXIT_FAILURE;
     }
