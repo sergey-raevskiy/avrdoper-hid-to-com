@@ -112,10 +112,8 @@ void pool_clear(pool_t *pool)
 {
     while (pool->child)
     {
-        pool_t *child = pool->child;
-        pool->child = pool->child->prev_sibling;
-
-        pool_destroy(child);
+        // This will remove child pool from child list.
+        pool_destroy(pool->child);
     }
 
     while (pool->cleanup)
