@@ -14,6 +14,14 @@ enum {
     report_start_data = report_header_length
 };
 
+enum {
+    report_size_1 = 13,
+    report_size_2 = 29,
+    report_size_3 = 61,
+    report_size_4 = 125,
+    report_size_max = report_size_4
+};
+
 static err_t * get_interface_details(SP_DEVICE_INTERFACE_DETAIL_DATA **details,
                                      HDEVINFO devs,
                                      SP_DEVICE_INTERFACE_DATA *info,
@@ -134,12 +142,15 @@ static err_t * avrdoper_hid_enum(serial_enumerate_callback_t callback,
 
 struct serial_private {
     HANDLE handle;
-    unsigned char rxbuf[128];
+    unsigned char rxbuf[report_header_length + report_size_max];
     int rxpos;
     int rxavail;
 };
 
-static const size_t report_sizes[] = { 13, 29, 61, 125 };
+static const size_t report_sizes[] = {
+    report_size_1, report_size_2,
+    report_size_3, report_size_4
+};
 
 static const int choose_data_size(size_t size) {
     int i = 0;
@@ -172,7 +183,7 @@ static err_t * avrdoper_hid_write(serial_private_t *dev,
     while (len) {
         int id = choose_data_size(len);
         int chunk_len = len > report_sizes[id] ? report_sizes[id] : len;
-        char buf[256];
+        char buf[report_header_length + report_size_max];
 
         buf[report_id] = (char) (id + 1);
         buf[report_size] = (char) chunk_len;
@@ -205,8 +216,8 @@ static err_t * avrdoper_hid_read(serial_private_t *dev,
 
         dev->rxavail = dev->rxbuf[report_size];
         dev->rxpos = report_start_data;
-        if (dev->rxavail > 125)
-            dev->rxavail = 125;
+        if (dev->rxavail > report_size_max)
+            dev->rxavail = report_size_max;
     }
 
     if (*len > dev->rxavail)
