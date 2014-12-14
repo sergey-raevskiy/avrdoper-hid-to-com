@@ -9,7 +9,9 @@
 
 enum {
     report_id = 0,
-    report_size
+    report_size,
+    report_header_length,
+    report_start_data = report_header_length
 };
 
 static err_t * get_interface_details(SP_DEVICE_INTERFACE_DETAIL_DATA **details,
@@ -174,9 +176,10 @@ static err_t * avrdoper_hid_write(serial_private_t *dev,
 
         buf[report_id] = (char) (id + 1);
         buf[report_size] = (char) chunk_len;
-        memcpy(buf + 2, data, chunk_len);
+        memcpy(&buf[report_start_data], data, chunk_len);
 
-        if (!HidD_SetFeature(dev->handle, buf, report_sizes[id] + 2)) {
+        if (!HidD_SetFeature(dev->handle, buf,
+                             report_sizes[id] + report_header_length)) {
             return err_create(GetLastError(), L"Can't write to device");
         }
 
@@ -196,12 +199,12 @@ static err_t * avrdoper_hid_read(serial_private_t *dev,
         dev->rxbuf[report_id] = 4;
 
         if (!HidD_GetFeature(dev->handle, dev->rxbuf,
-                             report_sizes[3] + 2)) {
+                             report_sizes[3] + report_header_length)) {
             return err_create(GetLastError(), L"Can't read from device");
         }
 
         dev->rxavail = dev->rxbuf[report_size];
-        dev->rxpos = 2;
+        dev->rxpos = report_start_data;
         if (dev->rxavail > 125)
             dev->rxavail = 125;
     }
