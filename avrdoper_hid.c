@@ -7,6 +7,11 @@
 #define AVRDOPER_VID 0x16c0
 #define AVRDOPER_PID 0x05df
 
+enum {
+    report_id = 0,
+    report_size
+};
+
 static err_t * get_interface_details(SP_DEVICE_INTERFACE_DETAIL_DATA **details,
                                      HDEVINFO devs,
                                      SP_DEVICE_INTERFACE_DATA *info,
@@ -167,8 +172,8 @@ static err_t * avrdoper_hid_write(serial_private_t *dev,
         int chunk_len = len > report_sizes[id] ? report_sizes[id] : len;
         char buf[256];
 
-        buf[0] = (char) (id + 1);
-        buf[1] = (char) chunk_len;
+        buf[report_id] = (char) (id + 1);
+        buf[report_size] = (char) chunk_len;
         memcpy(buf + 2, data, chunk_len);
 
         if (!HidD_SetFeature(dev->handle, buf, report_sizes[id] + 2)) {
@@ -188,14 +193,14 @@ static err_t * avrdoper_hid_read(serial_private_t *dev,
                                  pool_t *pool) {
     // FIXME: This written in hackish way.
     if (!dev->rxavail) {
-        dev->rxbuf[0] = 4;
+        dev->rxbuf[report_id] = 4;
 
         if (!HidD_GetFeature(dev->handle, dev->rxbuf,
                              report_sizes[3] + 2)) {
             return err_create(GetLastError(), L"Can't read from device");
         }
 
-        dev->rxavail = dev->rxbuf[1];
+        dev->rxavail = dev->rxbuf[report_size];
         dev->rxpos = 2;
         if (dev->rxavail > 125)
             dev->rxavail = 125;
